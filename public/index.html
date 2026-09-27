@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GymPro</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Segoe UI',sans-serif;background:#0f0f0f;color:#fff;min-height:100vh}
+
+    /* ── AUTH ── */
+    .auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0f0f0f,#1a1a2e)}
+    .auth-box{background:#1a1a2e;border:1px solid #222;border-radius:16px;padding:40px;width:100%;max-width:440px}
+    .auth-box h1{color:#e94560;font-size:28px;margin-bottom:4px}
+    .auth-box p{color:#aaa;font-size:13px;margin-bottom:28px}
+    .auth-tabs{display:flex;gap:8px;margin-bottom:24px}
+    .auth-tab{flex:1;padding:10px;background:#0f0f0f;border:1px solid #333;border-radius:8px;color:#aaa;cursor:pointer;font-size:14px;font-weight:600;transition:.2s}
+    .auth-tab.active{background:#e94560;border-color:#e94560;color:#fff}
+    .auth-form{display:none}
+    .auth-form.active{display:block}
+    .fg{margin-bottom:16px}
+    .fg label{display:block;font-size:11px;color:#aaa;text-transform:uppercase;margin-bottom:6px}
+    .fg input,.fg select{width:100%;background:#0f0f0f;border:1px solid #333;color:#fff;padding:11px 14px;border-radius:8px;font-size:14px}
+    .fg input:focus,.fg select:focus{outline:none;border-color:#e94560}
+    .btn-full{width:100%;padding:13px;background:#e94560;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;margin-top:4px}
+    .btn-full:hover{background:#c73652}
+    .alert{padding:11px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;display:none}
+    .alert.success{background:#1a3a2a;color:#2ecc71;border:1px solid #2ecc71}
+    .alert.error{background:#3a1a1a;color:#e74c3c;border:1px solid #e74c3c}
+    .plan-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+    .plan-card{border:2px solid #333;border-radius:10px;padding:14px;cursor:pointer;transition:.2s;text-align:center}
+    .plan-card:hover{border-color:#e94560}
+    .plan-card.selected{border-color:#e94560;background:#1a0a10}
+    .plan-card .plan-name{font-weight:700;font-size:14px}
+    .plan-card .plan-price{color:#e94560;font-size:18px;font-weight:800;margin:4px 0}
+    .plan-card .plan-dur{color:#aaa;font-size:11px}
+
+    /* ── ADMIN APP ── */
+    #admin-app{display:none}
+    .admin-header{background:linear-gradient(135deg,#1a0a00,#2d1500);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #f39c12;position:sticky;top:0;z-index:100}
+    .admin-header h1{font-size:22px;color:#f39c12;letter-spacing:2px}
+    .admin-tabs{display:flex;background:#1a0f00;padding:0 28px;gap:4px;overflow-x:auto;border-bottom:1px solid #333}
+    .admin-tab-btn{padding:13px 18px;background:none;border:none;color:#aaa;cursor:pointer;font-size:13px;font-weight:500;border-bottom:3px solid transparent;transition:.2s;white-space:nowrap}
+    .admin-tab-btn:hover{color:#fff}
+    .admin-tab-btn.active{color:#f39c12;border-bottom-color:#f39c12}
+    .admin-stat .number{color:#f39c12}
+
+    /* ── USER APP ── */
+    #user-app{display:none}
+    .user-header{background:linear-gradient(135deg,#0a1a0a,#001a10);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #2ecc71;position:sticky;top:0;z-index:100}
+    .user-header h1{font-size:22px;color:#2ecc71;letter-spacing:2px}
+    .user-tabs{display:flex;background:#0a1a0a;padding:0 28px;gap:4px;overflow-x:auto;border-bottom:1px solid #333}
+    .user-tab-btn{padding:13px 18px;background:none;border:none;color:#aaa;cursor:pointer;font-size:13px;font-weight:500;border-bottom:3px solid transparent;transition:.2s;white-space:nowrap}
+    .user-tab-btn:hover{color:#fff}
+    .user-tab-btn.active{color:#2ecc71;border-bottom-color:#2ecc71}
+
+    /* ── SHARED ── */
+    .user-info{display:flex;align-items:center;gap:12px;font-size:13px;color:#aaa}
+    .admin-badge{background:#f39c12;color:#000;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700}
+    .member-badge{background:#2ecc71;color:#000;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700}
+    .btn-logout{background:none;border:1px solid #444;color:#aaa;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px}
+    .btn-logout:hover{color:#fff;border-color:#fff}
+    .content{padding:28px;max-width:1100px;margin:0 auto}
+    .tab-panel{display:none}
+    .tab-panel.active{display:block}
+    .card{background:#1a1a2e;border-radius:12px;padding:22px;margin-bottom:22px;border:1px solid #222}
+    .admin-card{background:#1a1000;border-radius:12px;padding:22px;margin-bottom:22px;border:1px solid #332200}
+    .admin-card h2{font-size:17px;margin-bottom:18px;color:#f39c12}
+    .card h2{font-size:17px;margin-bottom:18px;color:#2ecc71}
+    .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:14px}
+    .form-group{display:flex;flex-direction:column;gap:5px}
+    .form-group label{font-size:11px;color:#aaa;text-transform:uppercase}
+    input,select,textarea{background:#0f0f0f;border:1px solid #333;color:#fff;padding:10px 13px;border-radius:8px;font-size:13px;width:100%}
+    input:focus,select:focus,textarea:focus{outline:none;border-color:#e94560}
+    textarea{resize:vertical;min-height:75px}
+    .btn{padding:10px 22px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:.2s}
+    .btn-primary{background:#e94560;color:#fff}
+    .btn-primary:hover{background:#c73652}
+    .btn-green{background:#2ecc71;color:#000;font-weight:700}
+    .btn-green:hover{background:#27ae60}
+    .btn-orange{background:#f39c12;color:#000;font-weight:700}
+    .btn-orange:hover{background:#e67e22}
+    .btn-secondary{background:#16213e;color:#fff;border:1px solid #333}
+    .btn-secondary:hover{border-color:#e94560}
+    .btn-danger{background:#c0392b;color:#fff;font-size:11px;padding:5px 10px;border-radius:6px;border:none;cursor:pointer}
+    table{width:100%;border-collapse:collapse}
+    th{text-align:left;padding:11px 14px;font-size:11px;color:#aaa;text-transform:uppercase;border-bottom:1px solid #333}
+    td{padding:13px 14px;font-size:13px;border-bottom:1px solid #1a1a2e}
+    tr:hover td{background:#16213e}
+    .inline-alert{padding:11px 14px;border-radius:8px;margin-bottom:14px;font-size:13px;display:none}
+    .inline-alert.success{background:#1a3a2a;color:#2ecc71;border:1px solid #2ecc71}
+    .inline-alert.error{background:#3a1a1a;color:#e74c3c;border:1px solid #e74c3c}
+    .plan-output{background:#0f0f0f;border:1px solid #333;border-radius:8px;padding:18px;margin-top:18px;white-space:pre-wrap;font-size:13px;line-height:1.8;display:none;max-height:480px;overflow-y:auto}
+    .spinner{display:none;text-align:center;padding:18px;color:#aaa;font-size:13px}
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:22px}
+    .stat-card{border-radius:12px;padding:18px;text-align:center;border:1px solid #222}
+    .stat-card .number{font-size:34px;font-weight:700}
+    .stat-card .label{font-size:11px;color:#aaa;margin-top:3px}
+    .badge{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
+    .badge-green{background:#1a3a2a;color:#2ecc71}
+    .badge-blue{background:#1a2a3a;color:#3498db}
+    .badge-red{background:#3a1a1a;color:#e94560}
+    .badge-gold{background:#3a2a0a;color:#f39c12}
+    .badge-orange{background:#3a2000;color:#f39c12}
+    .empty{text-align:center;padding:36px;color:#555;font-size:13px}
+
+    /* ── EXPIRY BANNER ── */
+    .expiry-banner{padding:14px 20px;border-radius:10px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:gap}
+    .expiry-expired{background:#3a0a0a;border:1px solid #e74c3c;color:#e74c3c}
+    .expiry-soon{background:#3a2a0a;border:1px solid #f39c12;color:#f39c12}
+    .expiry-ok{background:#0a3a1a;border:1px solid #2ecc71;color:#2ecc71}
+    .expiry-text{font-size:13px;font-weight:600}
+    .expiry-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+
+    /* ── PLAN CHANGE MODAL ── */
+    .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:999;align-items:center;justify-content:center}
+    .modal-overlay.open{display:flex}
+    .modal{background:#1a1a2e;border:1px solid #333;border-radius:16px;padding:32px;width:100%;max-width:460px}
+    .modal h2{color:#2ecc71;margin-bottom:6px}
+    .modal p{color:#aaa;font-size:13px;margin-bottom:20px}
+    .modal-plan-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+    .modal-plan-card{border:2px solid #333;border-radius:10px;padding:14px;cursor:pointer;transition:.2s;text-align:center}
+    .modal-plan-card:hover{border-color:#2ecc71}
+    .modal-plan-card.selected{border-color:#2ecc71;background:#0a1a0a}
+    .modal-plan-card .plan-name{font-weight:700;font-size:13px}
+    .modal-plan-card .plan-price{color:#2ecc71;font-size:17px;font-weight:800;margin:4px 0}
+    .modal-plan-card .plan-dur{color:#aaa;font-size:11px}
+    .modal-btns{display:flex;gap:10px}
+
+    /* ── TRAINER CARDS ── */
+    .trainer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+    .trainer-card{background:#0a1a0a;border:2px solid #1a3a1a;border-radius:12px;padding:20px;cursor:pointer;transition:.2s}
+    .trainer-card:hover{border-color:#2ecc71}
+    .trainer-card.selected{border-color:#2ecc71;background:#051005}
+    .trainer-name{font-size:15px;font-weight:700;margin-bottom:4px}
+    .trainer-spec{color:#2ecc71;font-size:12px;margin-bottom:12px}
+    .trainer-detail{font-size:12px;color:#aaa;margin-bottom:4px}
+    .trainer-rating{color:#f39c12;font-size:13px;font-weight:700}
+    .trainer-days{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+    .day-badge{background:#0f0f0f;border:1px solid #333;padding:3px 8px;border-radius:4px;font-size:11px;color:#aaa}
+
+    /* ── PROFILE ── */
+    .profile-card{background:#0a1a0a;border:1px solid #1a3a1a;border-radius:12px;padding:24px;display:flex;align-items:center;gap:20px;margin-bottom:22px}
+    .profile-avatar{width:64px;height:64px;background:#2ecc71;color:#000;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;flex-shrink:0}
+    .profile-name{font-size:20px;font-weight:700}
+    .profile-meta{color:#aaa;font-size:13px;margin-top:4px}
+  </style>
+</head>
+<body>
+
+<!-- ══ AUTH ════════════════════════════════════════════ -->
+<div class="auth-wrap" id="auth-screen">
+  <div class="auth-box">
+    <h1>💪 GYMPRO</h1>
+    <p>Your complete gym management system</p>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="showAuthTab('login',this)">Login</button>
+      <button class="auth-tab" onclick="showAuthTab('register',this)">Register</button>
+    </div>
+
+    <!-- LOGIN -->
+    <div class="auth-form active" id="form-login">
+      <div class="alert" id="login-alert"></div>
+      <div class="fg"><label>Email</label><input type="email" id="l-email" placeholder="your@gmail.com"/></div>
+      <div class="fg"><label>Password</label><input type="password" id="l-pass" placeholder="••••••••"/></div>
+      <button class="btn-full" onclick="login()">Login →</button>
+    </div>
+
+    <!-- REGISTER -->
+    <div class="auth-form" id="form-register">
+      <div class="alert" id="reg-alert"></div>
+      <div id="reg-step1">
+        <div class="fg"><label>Full Name</label><input type="text" id="r-name" placeholder="Varun Kumar"/></div>
+        <div class="fg"><label>Email</label><input type="email" id="r-email" placeholder="your@gmail.com"/></div>
+        <div class="fg"><label>Phone</label><input type="text" id="r-phone" placeholder="9876543210"/></div>
+        <div class="fg"><label>Password</label><input type="password" id="r-pass" placeholder="Create a password"/></div>
+        <div class="fg"><label>Choose Membership</label></div>
+        <div class="plan-grid" id="plan-grid"></div>
+        <input type="hidden" id="r-membership"/>
+        <button class="btn-full" onclick="register()">Register & Get OTP →</button>
+      </div>
+      <div id="reg-step2" style="display:none">
+        <p style="color:#aaa;font-size:13px;margin-bottom:18px;">📧 OTP sent to your email. Enter it below:</p>
+        <div class="fg"><label>OTP Code</label><input type="text" id="r-otp" placeholder="123456" maxlength="6" style="font-size:22px;letter-spacing:8px;text-align:center"/></div>
+        <button class="btn-full" onclick="verifyOtp()">Verify & Continue →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PLAN CHANGE MODAL ════════════════════════════════ -->
+<div class="modal-overlay" id="plan-modal">
+  <div class="modal">
+    <h2>🔄 Change / Renew Plan</h2>
+    <p>Select a new plan. It starts from today.</p>
+    <div class="modal-plan-grid" id="modal-plan-grid"></div>
+    <div class="modal-btns">
+      <button class="btn btn-green" onclick="confirmPlanChange()">✅ Confirm</button>
+      <button class="btn btn-secondary" onclick="closePlanModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ADMIN APP ════════════════════════════════════════ -->
+<div id="admin-app">
+  <div class="admin-header">
+    <div><h1>⚙️ GYMPRO ADMIN</h1></div>
+    <div class="user-info">
+      <span id="admin-name"></span>
+      <span class="admin-badge">👑 ADMIN</span>
+      <button class="btn-logout" onclick="logout()">Logout</button>
+    </div>
+  </div>
+  <div class="admin-tabs">
+    <button class="admin-tab-btn active" onclick="adminTab('dashboard',this)">📊 Dashboard</button>
+    <button class="admin-tab-btn" onclick="adminTab('members',this)">👥 Members</button>
+    <button class="admin-tab-btn" onclick="adminTab('attendance',this)">📋 Attendance</button>
+    <button class="admin-tab-btn" onclick="adminTab('bookings',this)">🏋️ PT Bookings</button>
+  </div>
+  <div class="content">
+
+    <!-- ADMIN DASHBOARD -->
+    <div id="admin-dashboard" class="tab-panel active">
+      <div class="stats-grid">
+        <div class="stat-card admin-stat" style="background:#1a1000;border-color:#332200"><div class="number" id="st-members">0</div><div class="label">Total Members</div></div>
+        <div class="stat-card admin-stat" style="background:#1a1000;border-color:#332200"><div class="number" id="st-checkins">0</div><div class="label">Total Check-ins</div></div>
+        <div class="stat-card admin-stat" style="background:#1a1000;border-color:#332200"><div class="number" id="st-bookings">0</div><div class="label">PT Bookings</div></div>
+        <div class="stat-card admin-stat" style="background:#1a1000;border-color:#332200"><div class="number" id="st-today">0</div><div class="label">Today's Check-ins</div></div>
+      </div>
+      <div class="admin-card">
+        <h2>Recent Check-ins</h2>
+        <table><thead><tr><th>Member</th><th>Time</th></tr></thead>
+        <tbody id="dash-checkins"><tr><td colspan="2" class="empty">Loading...</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- ADMIN MEMBERS -->
+    <div id="admin-members" class="tab-panel">
+      <div class="admin-card">
+        <h2>All Members & Plan Status</h2>
+        <table><thead><tr><th>Name</th><th>Email</th><th>Membership</th><th>Price</th><th>Expires</th><th>Days Left</th><th>Verified</th><th>Action</th></tr></thead>
+        <tbody id="members-table"><tr><td colspan="8" class="empty">Loading...</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- ADMIN ATTENDANCE -->
+    <div id="admin-attendance" class="tab-panel">
+      <div class="admin-card">
+        <h2>Full Attendance Log</h2>
+        <table><thead><tr><th>#</th><th>Member</th><th>Check-in Time</th></tr></thead>
+        <tbody id="admin-att-table"><tr><td colspan="3" class="empty">Loading...</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- ADMIN BOOKINGS -->
+    <div id="admin-bookings" class="tab-panel">
+      <div class="admin-card">
+        <h2>All PT Bookings</h2>
+        <table><thead><tr><th>Member</th><th>Trainer</th><th>Date</th><th>Time</th><th>Status</th></tr></thead>
+        <tbody id="admin-bk-table"><tr><td colspan="5" class="empty">Loading...</td></tr></tbody></table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ USER APP ═════════════════════════════════════════ -->
+<div id="user-app">
+  <div class="user-header">
+    <div><h1>💪 GYMPRO</h1></div>
+    <div class="user-info">
+      <span id="user-name"></span>
+      <span class="member-badge">🏋️ MEMBER</span>
+      <button class="btn-logout" onclick="logout()">Logout</button>
+    </div>
+  </div>
+  <div class="user-tabs">
+    <button class="user-tab-btn active" onclick="userTab('profile',this)">👤 My Profile</button>
+    <button class="user-tab-btn" onclick="userTab('checkin',this)">✅ Check-In</button>
+    <button class="user-tab-btn" onclick="userTab('bookings',this)">🏋️ Book PT</button>
+    <button class="user-tab-btn" onclick="userTab('progress',this)">📈 Progress</button>
+    <button class="user-tab-btn" onclick="userTab('diet',this)">🥗 Diet Plan</button>
+    <button class="user-tab-btn" onclick="userTab('workout',this)">🔥 Workout Plan</button>
+  </div>
+  <div class="content">
+
+    <!-- USER PROFILE -->
+    <div id="user-profile" class="tab-panel active">
+      <div id="expiry-banner"></div>
+      <div class="profile-card">
+        <div class="profile-avatar" id="profile-avatar">V</div>
+        <div>
+          <div class="profile-name" id="profile-name">Loading...</div>
+          <div class="profile-meta" id="profile-meta"></div>
+          <div style="margin-top:10px" id="profile-plan"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- USER CHECK-IN -->
+    <div id="user-checkin" class="tab-panel">
+      <div class="card">
+        <h2>✅ Gym Check-In</h2>
+        <div class="inline-alert" id="ci-alert"></div>
+        <p style="color:#aaa;font-size:13px;margin-bottom:20px;">Click the button below to mark your attendance for today.</p>
+        <button class="btn btn-green" onclick="checkIn()" style="font-size:15px;padding:14px 32px;">✅ Check In Now</button>
+      </div>
+      <div class="card">
+        <h2>My Attendance History</h2>
+        <table><thead><tr><th>#</th><th>Date & Time</th></tr></thead>
+        <tbody id="user-att-table"><tr><td colspan="2" class="empty">Loading...</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- USER BOOK PT -->
+    <div id="user-bookings" class="tab-panel">
+      <div class="card">
+        <h2>🏋️ Select a Trainer</h2>
+        <div class="inline-alert" id="bk-alert"></div>
+        <div class="trainer-grid" id="trainer-grid"></div>
+        <div id="booking-form" style="display:none;margin-top:20px;">
+          <div class="form-grid">
+            <div class="form-group"><label>Session Date</label><input type="date" id="b-date"/></div>
+            <div class="form-group"><label>Session Time</label><input type="time" id="b-time"/></div>
+          </div>
+          <button class="btn btn-green" onclick="bookPT()">📅 Confirm Booking</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>My Bookings</h2>
+        <table><thead><tr><th>Trainer</th><th>Date</th><th>Time</th><th>Status</th></tr></thead>
+        <tbody id="bk-table"><tr><td colspan="4" class="empty">Loading...</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- USER PROGRESS -->
+    <div id="user-progress" class="tab-panel">
+      <div class="card">
+        <h2>📈 Log Progress</h2>
+        <div class="inline-alert" id="pr-alert"></div>
+        <div class="form-grid">
+          <div class="form-group"><label>Weight (kg)</label><input type="number" id="p-weight" placeholder="75"/></div>
+          <div class="form-group"><label>Body Fat %</label><input type="number" id="p-fat" placeholder="18"/></div>
+          <div class="form-group"><label>Notes</label><input type="text" id="p-notes" placeholder="Feeling stronger!"/></div>
+        </div>
+        <button class="btn btn-green" onclick="logProgress()">💾 Save Progress</button>
+      </div>
+      <div class="card">
+        <h2>Progress History</h2>
+        <table><thead><tr><th>Date</th><th>Weight</th><th>Body Fat</th><th>Notes</th></tr></thead>
+        <tbody id="pr-table"><tr><td colspan="4" class="empty">No records yet</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- USER DIET PLAN -->
+    <div id="user-diet" class="tab-panel">
+      <div class="card">
+        <h2>🥗 AI Diet Plan Generator</h2>
+        <div class="inline-alert" id="dt-alert"></div>
+        <div class="form-grid">
+          <div class="form-group"><label>Goal</label>
+            <select id="d-goal">
+              <option value="bulk up and gain muscle mass">Bulking 💪</option>
+              <option value="cut fat and get lean">Cutting 🔥</option>
+              <option value="maintain weight and stay fit">Maintenance ⚖️</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Weight (kg)</label><input type="number" id="d-weight" placeholder="75"/></div>
+          <div class="form-group"><label>Height (cm)</label><input type="number" id="d-height" placeholder="175"/></div>
+          <div class="form-group"><label>Age</label><input type="number" id="d-age" placeholder="20"/></div>
+        </div>
+        <button class="btn btn-green" onclick="generateDiet()">✨ Generate AI Diet Plan</button>
+        <div class="spinner" id="dt-spinner">⏳ AI is generating your personalised diet plan...</div>
+        <div class="plan-output" id="dt-output"></div>
+      </div>
+    </div>
+
+    <!-- USER WORKOUT PLAN -->
+    <div id="user-workout" class="tab-panel">
+      <div class="card">
+        <h2>🔥 AI Workout Plan Generator</h2>
+        <div class="inline-alert" id="wk-alert"></div>
+        <div class="form-grid">
+          <div class="form-group"><label>Fitness Level</label>
+            <select id="w-level">
+              <option value="beginner">Beginner</option>
+              <option value="intermediate">Intermediate</option>
+              <option value="advanced">Advanced</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Goal</label>
+            <select id="w-goal">
+              <option value="build muscle and increase strength">Muscle Building 💪</option>
+              <option value="lose fat and improve cardio">Fat Loss 🔥</option>
+              <option value="improve overall fitness">General Fitness ⚡</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Days per Week</label>
+            <select id="w-days">
+              <option value="3">3 Days</option>
+              <option value="4">4 Days</option>
+              <option value="5">5 Days</option>
+              <option value="6">6 Days</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-green" onclick="generateWorkout()">✨ Generate AI Workout Plan</button>
+        <div class="spinner" id="wk-spinner">⏳ AI is creating your personalised workout plan...</div>
+        <div class="plan-output" id="wk-output"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:3000/api';
+let TOKEN = localStorage.getItem('gym_token');
+let USER  = JSON.parse(localStorage.getItem('gym_user') || 'null');
+let selectedTrainer = null;
+let selectedPlan = null;
+let selectedModalPlan = null;
+
+const PLANS = [
+  { name:'Day Pass',  price:500,   dur:'1 Day' },
+  { name:'Monthly',   price:3000,  dur:'1 Month' },
+  { name:'6 Months',  price:8000,  dur:'6 Months' },
+  { name:'Annual',    price:12000, dur:'1 Year' }
+];
+const PRICES = {'Day Pass':500,'Monthly':3000,'6 Months':8000,'Annual':12000};
+
+window.onload = () => { loadPlanCards(); if(TOKEN&&USER) bootApp(); };
+function authHeaders(){ return {'Content-Type':'application/json','Authorization':'Bearer '+TOKEN}; }
+
+// ── AUTH ──────────────────────────────────────────────────
+function showAuthTab(tab, el) {
+  document.querySelectorAll('.auth-tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.auth-form').forEach(f=>f.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('form-'+tab).classList.add('active');
+}
+
+function showAlert(id, msg, type) {
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.textContent = msg;
+  el.className = (el.classList.contains('alert')?'alert ':'inline-alert ')+type;
+  el.style.display = 'block';
+  setTimeout(()=>el.style.display='none', 4000);
+}
+
+function loadPlanCards() {
+  document.getElementById('plan-grid').innerHTML = PLANS.map(p=>`
+    <div class="plan-card" onclick="selectPlan('${p.name}',this)">
+      <div class="plan-name">${p.name}</div>
+      <div class="plan-price">₹${p.price.toLocaleString()}</div>
+      <div class="plan-dur">${p.dur}</div>
+    </div>`).join('');
+}
+
+function selectPlan(name, el) {
+  document.querySelectorAll('.plan-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedPlan = name;
+  document.getElementById('r-membership').value = name;
+}
+
+async function register() {
+  const name = document.getElementById('r-name').value.trim();
+  const email = document.getElementById('r-email').value.trim();
+  const phone = document.getElementById('r-phone').value.trim();
+  const password = document.getElementById('r-pass').value;
+  const membership_type = document.getElementById('r-membership').value || selectedPlan;
+  if(!name) return alert('❌ Please enter your name');
+  if(!email) return alert('❌ Please enter your email');
+  if(!password) return alert('❌ Please enter a password');
+  if(!membership_type) return alert('❌ Please select a membership plan');
+  try {
+    const res = await fetch(API+'/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,phone,membership_type,password})});
+    const data = await res.json();
+    if(data.error) return alert('❌ '+data.error);
+    localStorage.setItem('reg_email',email);
+    document.getElementById('reg-step1').style.display='none';
+    document.getElementById('reg-step2').style.display='block';
+    alert('✅ OTP sent! Check your email.');
+  } catch(e){ alert('❌ Server error: '+e.message); }
+}
+
+async function verifyOtp() {
+  const email = localStorage.getItem('reg_email');
+  const otp = document.getElementById('r-otp').value.trim();
+  if(!otp) return alert('❌ Enter the OTP');
+  if(!email) return alert('❌ Session expired, please register again');
+  try {
+    const res = await fetch(API+'/verify-otp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,otp})});
+    const data = await res.json();
+    if(data.error) return alert('❌ '+data.error);
+    alert('✅ Email verified! Please login now.');
+    document.getElementById('reg-step1').style.display='block';
+    document.getElementById('reg-step2').style.display='none';
+    document.getElementById('r-otp').value='';
+    document.querySelectorAll('.auth-tab')[0].click();
+    showAuthTab('login', document.querySelectorAll('.auth-tab')[0]);
+  } catch(e){ alert('❌ Server error: '+e.message); }
+}
+
+async function login() {
+  const email = document.getElementById('l-email').value.trim();
+  const password = document.getElementById('l-pass').value;
+  if(!email||!password) return showAlert('login-alert','❌ Fill all fields','error');
+  try {
+    const res = await fetch(API+'/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
+    const data = await res.json();
+    if(data.error) return showAlert('login-alert','❌ '+data.error,'error');
+    TOKEN = data.token;
+    USER = {id:data.id, name:data.name, role:data.role};
+    localStorage.setItem('gym_token',TOKEN);
+    localStorage.setItem('gym_user',JSON.stringify(USER));
+    bootApp();
+  } catch(e){ showAlert('login-alert','❌ Server error','error'); }
+}
+
+function logout() {
+  localStorage.removeItem('gym_token');
+  localStorage.removeItem('gym_user');
+  TOKEN=null; USER=null;
+  document.getElementById('admin-app').style.display='none';
+  document.getElementById('user-app').style.display='none';
+  document.getElementById('auth-screen').style.display='flex';
+}
+
+// ── BOOT ──────────────────────────────────────────────────
+function bootApp() {
+  document.getElementById('auth-screen').style.display='none';
+  if(USER.role==='admin') {
+    document.getElementById('admin-app').style.display='block';
+    document.getElementById('admin-name').textContent = USER.name;
+    loadAdminDashboard();
+  } else {
+    document.getElementById('user-app').style.display='block';
+    document.getElementById('user-name').textContent = USER.name;
+    loadProfile();
+  }
+}
+
+// ── ADMIN TABS ────────────────────────────────────────────
+function adminTab(id, el) {
+  document.querySelectorAll('#admin-app .tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.admin-tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('admin-'+id).classList.add('active');
+  el.classList.add('active');
+  if(id==='dashboard') loadAdminDashboard();
+  if(id==='members')   loadMembers();
+  if(id==='attendance') loadAdminAttendance();
+  if(id==='bookings')  loadAdminBookings();
+}
+
+// ── USER TABS ─────────────────────────────────────────────
+function userTab(id, el) {
+  document.querySelectorAll('#user-app .tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.user-tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('user-'+id).classList.add('active');
+  el.classList.add('active');
+  if(id==='profile')  loadProfile();
+  if(id==='checkin')  loadUserAttendance();
+  if(id==='bookings') { loadTrainers(); loadBookings(); }
+  if(id==='progress') loadProgressHistory();
+}
+
+// ── ADMIN DASHBOARD ───────────────────────────────────────
+async function loadAdminDashboard() {
+  const res = await fetch(API+'/stats',{headers:authHeaders()});
+  const s = await res.json();
+  document.getElementById('st-members').textContent  = s.members;
+  document.getElementById('st-checkins').textContent = s.checkins;
+  document.getElementById('st-bookings').textContent = s.bookings;
+  document.getElementById('st-today').textContent    = s.today;
+  const ar = await fetch(API+'/attendance',{headers:authHeaders()});
+  const att = await ar.json();
+  document.getElementById('dash-checkins').innerHTML = att.slice(0,8).map(a=>`
+    <tr><td><strong>${a.name}</strong></td><td>${new Date(a.checkin_time).toLocaleString()}</td></tr>
+  `).join('') || '<tr><td colspan="2" class="empty">No check-ins yet</td></tr>';
+}
+
+// ── ADMIN MEMBERS ─────────────────────────────────────────
+async function loadMembers() {
+  const res = await fetch(API+'/members-status',{headers:authHeaders()});
+  const members = await res.json();
+  const tbody = document.getElementById('members-table');
+  if(!members.length){tbody.innerHTML='<tr><td colspan="8" class="empty">No members</td></tr>';return;}
+  tbody.innerHTML = members.map(m=>{
+    const days = m.days_left;
+    const daysBadge = days < 0
+      ? `<span class="badge badge-red">Expired</span>`
+      : days <= 7
+        ? `<span class="badge badge-orange">${days} days</span>`
+        : `<span class="badge badge-green">${days} days</span>`;
+    return `<tr>
+      <td><strong>${m.name}</strong></td>
+      <td>${m.email||'—'}</td>
+      <td><span class="badge badge-blue">${m.membership_type||'—'}</span></td>
+      <td><strong style="color:#f39c12;">₹${(PRICES[m.membership_type]||0).toLocaleString()}</strong></td>
+      <td>${m.plan_end_date ? new Date(m.plan_end_date).toLocaleDateString() : '—'}</td>
+      <td>${daysBadge}</td>
+      <td><span class="badge ${m.email_verified?'badge-green':'badge-red'}">${m.email_verified?'✅':'❌'}</span></td>
+      <td><button class="btn-danger" onclick="deleteMember(${m.id})">Delete</button></td>
+    </tr>`;
+  }).join('');
+}
+
+async function deleteMember(id) {
+  if(!confirm('Delete this member?')) return;
+  await fetch(API+'/members/'+id,{method:'DELETE',headers:authHeaders()});
+  loadMembers();
+}
+
+async function loadAdminAttendance() {
+  const res = await fetch(API+'/attendance',{headers:authHeaders()});
+  const records = await res.json();
+  const tbody = document.getElementById('admin-att-table');
+  if(!records.length){tbody.innerHTML='<tr><td colspan="3" class="empty">No records</td></tr>';return;}
+  tbody.innerHTML = records.map((a,i)=>`
+    <tr><td>${i+1}</td><td><strong>${a.name}</strong></td><td>${new Date(a.checkin_time).toLocaleString()}</td></tr>
+  `).join('');
+}
+
+async function loadAdminBookings() {
+  const res = await fetch(API+'/bookings',{headers:authHeaders()});
+  const bookings = await res.json();
+  const tbody = document.getElementById('admin-bk-table');
+  if(!bookings.length){tbody.innerHTML='<tr><td colspan="5" class="empty">No bookings</td></tr>';return;}
+  tbody.innerHTML = bookings.map(b=>`
+    <tr>
+      <td><strong>${b.name}</strong></td>
+      <td>${b.trainer_name}</td>
+      <td>${new Date(b.session_date).toLocaleDateString()}</td>
+      <td>${b.session_time}</td>
+      <td><span class="badge badge-green">${b.status}</span></td>
+    </tr>
+  `).join('');
+}
+
+// ── USER PROFILE + EXPIRY BANNER ─────────────────────────
+async function loadProfile() {
+  const [pr, ps] = await Promise.all([
+    fetch(API+'/my-profile',{headers:authHeaders()}).then(r=>r.json()),
+    fetch(API+'/plan-status',{headers:authHeaders()}).then(r=>r.json())
+  ]);
+  document.getElementById('profile-avatar').textContent = pr.name?.[0]?.toUpperCase()||'U';
+  document.getElementById('profile-name').textContent = pr.name;
+  document.getElementById('profile-meta').textContent = `📧 ${pr.email}  |  📱 ${pr.phone||'—'}`;
+  document.getElementById('profile-plan').innerHTML = `
+    <span class="badge badge-gold" style="font-size:13px;padding:6px 14px;">
+      🏅 ${pr.membership_type} — ₹${(PRICES[pr.membership_type]||0).toLocaleString()}
+    </span>
+    <span style="margin-left:10px;color:#aaa;font-size:12px;">
+      Expires: ${ps.plan_end_date ? new Date(ps.plan_end_date).toLocaleDateString() : '—'}
+    </span>`;
+
+  // Expiry banner
+  const banner = document.getElementById('expiry-banner');
+  if(ps.expired) {
+    banner.innerHTML = `
+      <div class="expiry-banner expiry-expired">
+        <div>
+          <div class="expiry-text">⚠️ Your plan has expired! Renew to continue enjoying full access.</div>
+          <div class="expiry-actions">
+            <button class="btn btn-primary" onclick="openPlanModal()">🔄 Renew / Upgrade Plan</button>
+          </div>
+        </div>
+      </div>`;
+  } else if(ps.expiring_soon) {
+    banner.innerHTML = `
+      <div class="expiry-banner expiry-soon">
+        <div>
+          <div class="expiry-text">⏳ Your plan expires in <strong>${ps.days_left} day(s)</strong>. Renew early to avoid interruption!</div>
+          <div class="expiry-actions">
+            <button class="btn btn-orange" onclick="openPlanModal()">🔄 Renew / Upgrade Plan</button>
+          </div>
+        </div>
+      </div>`;
+  } else {
+    banner.innerHTML = `
+      <div class="expiry-banner expiry-ok">
+        <div class="expiry-text">✅ Plan active — <strong>${ps.days_left} days remaining</strong></div>
+        <button class="btn btn-secondary" onclick="openPlanModal()" style="margin-top:8px;">🔄 Change Plan</button>
+      </div>`;
+  }
+}
+
+// ── PLAN CHANGE MODAL ─────────────────────────────────────
+function openPlanModal() {
+  selectedModalPlan = null;
+  document.getElementById('modal-plan-grid').innerHTML = PLANS.map(p=>`
+    <div class="modal-plan-card" onclick="selectModalPlan('${p.name}',this)">
+      <div class="plan-name">${p.name}</div>
+      <div class="plan-price">₹${p.price.toLocaleString()}</div>
+      <div class="plan-dur">${p.dur}</div>
+    </div>`).join('');
+  document.getElementById('plan-modal').classList.add('open');
+}
+
+function closePlanModal() {
+  document.getElementById('plan-modal').classList.remove('open');
+}
+
+function selectModalPlan(name, el) {
+  document.querySelectorAll('.modal-plan-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedModalPlan = name;
+}
+
+async function confirmPlanChange() {
+  if(!selectedModalPlan) return alert('❌ Please select a plan');
+  const res = await fetch(API+'/change-plan',{method:'POST',headers:authHeaders(),body:JSON.stringify({membership_type:selectedModalPlan})});
+  const data = await res.json();
+  if(data.error) return alert('❌ '+data.error);
+  alert('✅ Plan changed to '+selectedModalPlan+'! Starts today.');
+  closePlanModal();
+  loadProfile();
+}
+
+// ── CHECK-IN ──────────────────────────────────────────────
+async function checkIn() {
+  const res = await fetch(API+'/checkin',{method:'POST',headers:authHeaders(),body:JSON.stringify({})});
+  const data = await res.json();
+  showAlert('ci-alert', data.message||data.error, data.error?'error':'success');
+  loadUserAttendance();
+}
+
+async function loadUserAttendance() {
+  const res = await fetch(API+'/attendance',{headers:authHeaders()});
+  const records = await res.json();
+  const tbody = document.getElementById('user-att-table');
+  if(!records.length){tbody.innerHTML='<tr><td colspan="2" class="empty">No check-ins yet</td></tr>';return;}
+  tbody.innerHTML = records.map((a,i)=>`
+    <tr><td>${i+1}</td><td>${new Date(a.checkin_time).toLocaleString()}</td></tr>
+  `).join('');
+}
+
+// ── TRAINERS ──────────────────────────────────────────────
+async function loadTrainers() {
+  const res = await fetch(API+'/trainers',{headers:authHeaders()});
+  const trainers = await res.json();
+  selectedTrainer = null;
+  document.getElementById('booking-form').style.display='none';
+  document.getElementById('trainer-grid').innerHTML = trainers.map(t=>`
+    <div class="trainer-card" onclick="selectTrainer('${t.name}',this)">
+      <div class="trainer-name">👤 ${t.name}</div>
+      <div class="trainer-spec">${t.specialization}</div>
+      <div class="trainer-detail">🎓 ${t.qualification}</div>
+      <div class="trainer-detail">🗓️ Experience: ${t.experience}</div>
+      <div class="trainer-detail">🎂 Age: ${t.age} years</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">
+        <span class="trainer-rating">⭐ ${t.rating}/5</span>
+      </div>
+      <div class="trainer-days">${t.available.map(d=>`<span class="day-badge">${d}</span>`).join('')}</div>
+    </div>`).join('');
+}
+
+function selectTrainer(name, el) {
+  document.querySelectorAll('.trainer-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedTrainer = name;
+  document.getElementById('booking-form').style.display='block';
+}
+
+async function bookPT() {
+  if(!selectedTrainer) return showAlert('bk-alert','❌ Select a trainer first','error');
+  const session_date = document.getElementById('b-date').value;
+  const session_time = document.getElementById('b-time').value;
+  if(!session_date||!session_time) return showAlert('bk-alert','❌ Pick date and time','error');
+  const res = await fetch(API+'/bookings',{method:'POST',headers:authHeaders(),body:JSON.stringify({trainer_name:selectedTrainer,session_date,session_time})});
+  const data = await res.json();
+  showAlert('bk-alert', data.message||data.error, data.error?'error':'success');
+  loadBookings();
+}
+
+async function loadBookings() {
+  const res = await fetch(API+'/bookings',{headers:authHeaders()});
+  const bookings = await res.json();
+  const tbody = document.getElementById('bk-table');
+  if(!bookings.length){tbody.innerHTML='<tr><td colspan="4" class="empty">No bookings yet</td></tr>';return;}
+  tbody.innerHTML = bookings.map(b=>`
+    <tr>
+      <td><strong>${b.trainer_name}</strong></td>
+      <td>${new Date(b.session_date).toLocaleDateString()}</td>
+      <td>${b.session_time}</td>
+      <td><span class="badge badge-green">${b.status}</span></td>
+    </tr>`).join('');
+}
+
+// ── PROGRESS ──────────────────────────────────────────────
+async function logProgress() {
+  const weight_kg = document.getElementById('p-weight').value;
+  const body_fat  = document.getElementById('p-fat').value;
+  const notes     = document.getElementById('p-notes').value;
+  if(!weight_kg) return showAlert('pr-alert','❌ Enter your weight','error');
+  const res = await fetch(API+'/progress',{method:'POST',headers:authHeaders(),body:JSON.stringify({weight_kg,body_fat,notes})});
+  const data = await res.json();
+  showAlert('pr-alert', data.message||data.error, data.error?'error':'success');
+  document.getElementById('p-weight').value='';
+  document.getElementById('p-fat').value='';
+  document.getElementById('p-notes').value='';
+  loadProgressHistory();
+}
+
+async function loadProgressHistory() {
+  const res = await fetch(API+'/progress/'+USER.id,{headers:authHeaders()});
+  const records = await res.json();
+  const tbody = document.getElementById('pr-table');
+  if(!records.length){tbody.innerHTML='<tr><td colspan="4" class="empty">No progress logged yet</td></tr>';return;}
+  tbody.innerHTML = records.map(p=>`
+    <tr>
+      <td>${new Date(p.recorded_date).toLocaleDateString()}</td>
+      <td><strong>${p.weight_kg} kg</strong></td>
+      <td>${p.body_fat?p.body_fat+'%':'—'}</td>
+      <td>${p.notes||'—'}</td>
+    </tr>`).join('');
+}
+
+// ── AI DIET ───────────────────────────────────────────────
+async function generateDiet() {
+  const goal_type = document.getElementById('d-goal').value;
+  const weight    = document.getElementById('d-weight').value;
+  const height    = document.getElementById('d-height').value;
+  const age       = document.getElementById('d-age').value;
+  if(!weight||!height||!age) return showAlert('dt-alert','❌ Fill all fields','error');
+  document.getElementById('dt-spinner').style.display='block';
+  document.getElementById('dt-output').style.display='none';
+  const res = await fetch(API+'/diet-plan',{method:'POST',headers:authHeaders(),body:JSON.stringify({goal_type,weight,height,age})});
+  const data = await res.json();
+  document.getElementById('dt-spinner').style.display='none';
+  const out = document.getElementById('dt-output');
+  out.textContent = data.plan||data.error;
+  out.style.display='block';
+}
+
+// ── AI WORKOUT ────────────────────────────────────────────
+async function generateWorkout() {
+  const fitness_level = document.getElementById('w-level').value;
+  const goal_type     = document.getElementById('w-goal').value;
+  const days_per_week = document.getElementById('w-days').value;
+  document.getElementById('wk-spinner').style.display='block';
+  document.getElementById('wk-output').style.display='none';
+  const res = await fetch(API+'/workout-plan',{method:'POST',headers:authHeaders(),body:JSON.stringify({fitness_level,goal_type,days_per_week})});
+  const data = await res.json();
+  document.getElementById('wk-spinner').style.display='none';
+  const out = document.getElementById('wk-output');
+  out.textContent = data.plan||data.error;
+  out.style.display='block';
+}
+</script>
+</body>
+</html>
